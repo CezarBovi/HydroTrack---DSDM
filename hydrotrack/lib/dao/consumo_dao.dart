@@ -19,7 +19,7 @@ Future<int> totalConsumidoNoDia(String data) async {
     [data],
   );
   final total = result.first['total'];
-  return total == null ? 0 : (total as int);
+  return total == null ? 0 : (total as num).toInt();
 }
 
 Future<bool> jaConsumiuNoHorario(String data, String horario) async {
