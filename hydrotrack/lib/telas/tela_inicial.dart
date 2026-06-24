@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
-import '../dao/consumo_dao.dart';
 import '../dao/usuario_dao.dart';
-import '../modelo/consumo.dart';
+import '../dao/consumo_dao.dart';
 import '../modelo/usuario.dart';
+import '../modelo/consumo.dart';
+import 'tela_historico.dart';
+import 'tela_lembretes.dart';
+import 'tela_configuracoes.dart';
 
 class TelaInicial extends StatefulWidget {
   const TelaInicial({super.key});
@@ -14,456 +16,299 @@ class TelaInicial extends StatefulWidget {
 }
 
 class _TelaInicialState extends State<TelaInicial> {
-  static const _corPrimaria = Color(0xFF3B82F6);
-  static const _corPrimariaEscura = Color(0xFF1E40AF);
-  static const _corFundoCard = Color(0xFFEFF6FF);
-  static const _corTextoSecundario = Color(0xFF9CA3AF);
-  static const _horaInicio = 8;
-  static const _horaFim = 20;
-  static const _coposPorDia = 6;
+  // BottomNavigationBar — Widget Novo #1
+  int _indiceAbaAtiva = 0;
 
-  int _abaSelecionada = 0;
-  bool _carregando = true;
-  bool _registrando = false;
-  bool _botaoPressionado = false;
-  Usuario? _usuario;
-  int _totalConsumido = 0;
-  Set<String> _horariosConsumidos = {};
-  List<Map<String, dynamic>> _consumosHoje = [];
+  Usuario? usuario;
+  int consumidoHoje = 0;
+  bool botaoClicado = false;
+  List<Map<String, dynamic>> registrosDeHoje = [];
 
   @override
   void initState() {
     super.initState();
-    _inicializar();
+    _carregarDados();
   }
-
-  Future<void> _inicializar() async {
-    await initializeDateFormatting('pt_BR');
-    await _carregarDados();
-  }
-
-  String get _dataHoje => DateFormat('yyyy-MM-dd').format(DateTime.now());
-
-  String get _horarioAtual {
-    final hora = DateTime.now().hour;
-    return '${hora.toString().padLeft(2, '0')}:00';
-  }
-
-  int _mlPorCopo(double meta) => (meta / _coposPorDia).round();
 
   Future<void> _carregarDados() async {
-    setState(() => _carregando = true);
-
-    final usuario = await buscarUsuario();
-    final total = await totalConsumidoNoDia(_dataHoje);
-    final consumos = await buscarConsumoPorData(_dataHoje);
-    final horarios = consumos.map((c) => c['horario'] as String).toSet();
-
-    if (!mounted) return;
+    final u = await buscarUsuario();
+    final dataHoje = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    final total = await totalConsumidoNoDia(dataHoje);
+    final registros = await buscarConsumoPorData(dataHoje);
 
     setState(() {
-      _usuario = usuario;
-      _totalConsumido = total;
-      _horariosConsumidos = horarios;
-      _consumosHoje = consumos;
-      _carregando = false;
+      usuario = u;
+      consumidoHoje = total;
+      registrosDeHoje = registros;
     });
   }
 
-  Future<void> _registrarAgua() async {
-    if (_usuario == null || _registrando) return;
+  Future<void> _registrarConsumo() async {
+    final dataHoje = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    final horarioAtual = DateFormat('HH:00').format(DateTime.now());
 
-    final hora = DateTime.now().hour;
-    if (hora < _horaInicio || hora > _horaFim) {
-      _mostrarMensagem('Registros disponíveis das ${_horaInicio}h às ${_horaFim}h');
-      return;
-    }
-
-    final horario = _horarioAtual;
-    if (_horariosConsumidos.contains(horario)) {
-      _mostrarMensagem('Você já registrou água neste horário!');
-      return;
-    }
-
-    setState(() => _registrando = true);
-
-    final ml = _mlPorCopo(_usuario!.metaDiariaMl);
     await registrarConsumo(Consumo(
-      data: _dataHoje,
-      horario: horario,
-      quantidadeMl: ml,
+      data: dataHoje,
+      horario: horarioAtual,
+      quantidadeMl: 250,
     ));
 
-    if (!mounted) return;
-
-    setState(() => _registrando = false);
+    setState(() => botaoClicado = true);
     await _carregarDados();
 
-    if (!mounted) return;
-    _mostrarMensagem('+$ml ml registrados! Continue hidratado 💧');
+    await Future.delayed(const Duration(seconds: 1));
+    if (mounted) setState(() => botaoClicado = false);
   }
 
-  void _mostrarMensagem(String texto) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(texto), behavior: SnackBarBehavior.floating),
+  double _calcularProgresso() {
+    if (usuario == null || usuario!.metaDiariaMl == 0) return 0;
+    return (consumidoHoje / usuario!.metaDiariaMl).clamp(0.0, 1.0);
+  }
+
+  String _formatarData() {
+    return DateFormat("EEEE, dd 'de' MMMM", 'pt_BR').format(DateTime.now());
+  }
+
+  Color _corProgresso() {
+    final p = _calcularProgresso();
+    if (p >= 1.0) return Colors.green;
+    if (p >= 0.5) return Colors.blue;
+    return Colors.orange;
+  }
+
+  Widget _construirHome() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            _formatarData(),
+            style: const TextStyle(fontSize: 13, color: Colors.grey),
+          ),
+          const SizedBox(height: 20),
+
+          // Card principal
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.blue.shade100),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  '$consumidoHoje ml',
+                  style: TextStyle(
+                    fontSize: 44,
+                    fontWeight: FontWeight.bold,
+                    color: _corProgresso(),
+                  ),
+                ),
+                Text(
+                  'de ${usuario!.metaDiariaMl.toStringAsFixed(0)} ml — ${(_calcularProgresso() * 100).toStringAsFixed(0)}%',
+                  style: const TextStyle(fontSize: 14, color: Colors.grey),
+                ),
+                const SizedBox(height: 16),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value: _calcularProgresso(),
+                    minHeight: 12,
+                    backgroundColor: Colors.blue.shade100,
+                    valueColor: AlwaysStoppedAnimation<Color>(_corProgresso()),
+                  ),
+                ),
+                if (_calcularProgresso() >= 1.0) ...[
+                  const SizedBox(height: 12),
+                  const Text(
+                    '🎉 Meta atingida! Parabéns!',
+                    style: TextStyle(
+                      color: Colors.green,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 32),
+
+          // Botão garrafa — AnimatedContainer — Widget Novo #2
+          GestureDetector(
+            onTap: botaoClicado ? null : _registrarConsumo,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              width: botaoClicado ? 130 : 110,
+              height: botaoClicado ? 150 : 130,
+              decoration: BoxDecoration(
+                color: botaoClicado ? Colors.green : Colors.blue,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: botaoClicado
+                        ? Colors.green.withOpacity(0.5)
+                        : Colors.blue.withOpacity(0.3),
+                    blurRadius: botaoClicado ? 24 : 10,
+                    spreadRadius: botaoClicado ? 4 : 1,
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    botaoClicado ? Icons.check_circle : Icons.local_drink,
+                    size: botaoClicado ? 52 : 44,
+                    color: Colors.white,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    botaoClicado ? 'Registrado!\n+250 ml' : 'Já bebi\nágua! 💧',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: botaoClicado ? 13 : 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 32),
+
+          // Registros do dia
+          if (registrosDeHoje.isNotEmpty) ...[
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Registros de hoje',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.blue.shade100),
+              ),
+              child: ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: registrosDeHoje.length,
+                separatorBuilder: (_, __) =>
+                    Divider(height: 1, color: Colors.blue.shade50),
+                itemBuilder: (context, index) {
+                  final r = registrosDeHoje[index];
+                  return ListTile(
+                    leading: const Icon(Icons.water_drop, color: Colors.blue),
+                    title: Text('${r['quantidade_ml']} ml'),
+                    trailing: Text(
+                      r['horario'],
+                      style: const TextStyle(color: Colors.grey),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ] else ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.orange.shade100),
+              ),
+              child: const Text(
+                '💡 Toque na garrafa sempre que beber água!',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.orange),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 
-  String _formatarDataCabecalho() {
-    final agora = DateTime.now();
-    final diaSemana = DateFormat('EEEE', 'pt_BR').format(agora);
-    final diaMes = DateFormat("dd 'de' MMMM", 'pt_BR').format(agora);
-    final diaCapitalizado = diaSemana[0].toUpperCase() + diaSemana.substring(1);
-    return 'Hoje — $diaCapitalizado\n$diaMes';
+  Widget _telaAtiva() {
+    switch (_indiceAbaAtiva) {
+      case 0:
+        return _construirHome();
+      case 1:
+        return const TelaHistorico();
+      case 2:
+        return const TelaLembretes();
+      case 3:
+        return const TelaConfiguracoes();
+      default:
+        return _construirHome();
+    }
   }
 
-  List<int> _horasVisiveis() {
-    final horaAtual = DateTime.now().hour.clamp(_horaInicio, _horaFim);
-    final inicio = (horaAtual - 2).clamp(_horaInicio, _horaFim);
-    final fim = (horaAtual + 1).clamp(_horaInicio, _horaFim);
-    return List.generate(fim - inicio + 1, (i) => inicio + i);
+  String _tituloDaAba() {
+    switch (_indiceAbaAtiva) {
+      case 0:
+        return 'Hoje';
+      case 1:
+        return 'Histórico';
+      case 2:
+        return 'Lembretes';
+      case 3:
+        return 'Configurações';
+      default:
+        return 'HydroTrack';
+    }
   }
-
-  String _formatarHora(int hora) => '${hora.toString().padLeft(2, '0')}h';
-
-  String _formatarMl(num valor) =>
-      NumberFormat('#,###', 'pt_BR').format(valor.round());
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F4F6),
-      body: SafeArea(child: _buildCorpo()),
+      appBar: AppBar(
+        title: Text(_tituloDaAba()),
+        centerTitle: true,
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
+      ),
+      body: usuario == null
+          ? const Center(child: CircularProgressIndicator())
+          : _telaAtiva(),
+
+      // BottomNavigationBar — Widget Novo #1
       bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _indiceAbaAtiva,
+        selectedItemColor: Colors.blue,
+        unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-        currentIndex: _abaSelecionada,
-        selectedItemColor: _corPrimaria,
-        unselectedItemColor: _corTextoSecundario,
-        backgroundColor: Colors.white,
-        elevation: 8,
-        onTap: (index) => setState(() => _abaSelecionada = index),
+        onTap: (indice) {
+          setState(() => _indiceAbaAtiva = indice);
+          if (indice == 0) _carregarDados();
+        },
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
+            icon: Icon(Icons.water_drop),
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.history_outlined),
-            activeIcon: Icon(Icons.history),
-            label: 'Hist.',
+            icon: Icon(Icons.bar_chart),
+            label: 'Histórico',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.notifications_outlined),
-            activeIcon: Icon(Icons.notifications),
-            label: 'Lemb.',
+            icon: Icon(Icons.notifications),
+            label: 'Lembretes',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart_outlined),
-            activeIcon: Icon(Icons.bar_chart),
-            label: 'Dados',
+            icon: Icon(Icons.settings),
+            label: 'Config.',
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildCorpo() {
-    if (_abaSelecionada != 0) {
-      const titulos = ['Home', 'Histórico', 'Lembretes', 'Dados'];
-      return Center(
-        child: Text(
-          '${titulos[_abaSelecionada]} — em breve',
-          style: const TextStyle(fontSize: 18, color: _corTextoSecundario),
-        ),
-      );
-    }
-
-    if (_carregando) {
-      return const Center(
-        child: CircularProgressIndicator(color: _corPrimaria),
-      );
-    }
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildCabecalho(),
-          const SizedBox(height: 20),
-          _buildProgresso(),
-          const SizedBox(height: 20),
-          _buildBotaoGarrafa(),
-          const SizedBox(height: 16),
-          _buildHistoricoHoras(),
-          const SizedBox(height: 16),
-          Expanded(child: _buildAreaConteudo()),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCabecalho() {
-    final partes = _formatarDataCabecalho().split('\n');
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 20, 16, 20),
-      decoration: BoxDecoration(
-        color: _corFundoCard,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFDBEAFE)),
-      ),
-      child: Stack(
-        children: [
-          Column(
-            children: [
-              Text(
-                partes[0],
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: _corPrimariaEscura,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                partes[1],
-                style: const TextStyle(
-                  fontSize: 15,
-                  color: _corPrimaria,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-          Positioned(
-            top: 0,
-            right: 0,
-            child: PopupMenuButton<String>(
-              icon: const Icon(Icons.more_horiz, color: _corTextoSecundario),
-              onSelected: (valor) {
-                if (valor == 'atualizar') _carregarDados();
-              },
-              itemBuilder: (context) => [
-                const PopupMenuItem(value: 'atualizar', child: Text('Atualizar')),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProgresso() {
-    final meta = _usuario?.metaDiariaMl ?? 2000;
-    final percentual = meta > 0 ? (_totalConsumido / meta).clamp(0.0, 1.0) : 0.0;
-    final percentualTexto = (percentual * 100).round();
-
-    return Column(
-      children: [
-        Text(
-          '${_formatarMl(_totalConsumido)} ml',
-          style: const TextStyle(
-            fontSize: 36,
-            fontWeight: FontWeight.bold,
-            color: _corPrimariaEscura,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'de ${_formatarMl(meta)} ml — $percentualTexto%',
-          style: const TextStyle(
-            fontSize: 15,
-            color: _corTextoSecundario,
-          ),
-        ),
-        const SizedBox(height: 16),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: LinearProgressIndicator(
-            value: percentual,
-            minHeight: 10,
-            backgroundColor: const Color(0xFFE5E7EB),
-            color: _corPrimaria,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBotaoGarrafa() {
-    final jaRegistrou = _horariosConsumidos.contains(_horarioAtual);
-    final desabilitado = _registrando || jaRegistrou;
-
-    return GestureDetector(
-      onTapDown: desabilitado
-          ? null
-          : (_) => setState(() => _botaoPressionado = true),
-      onTapUp: desabilitado
-          ? null
-          : (_) => setState(() => _botaoPressionado = false),
-      onTapCancel: () => setState(() => _botaoPressionado = false),
-      onTap: desabilitado ? null : _registrarAgua,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOut,
-        height: _botaoPressionado ? 50 : 56,
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: desabilitado
-              ? _corPrimaria.withValues(alpha: 0.5)
-              : (_botaoPressionado
-                  ? const Color(0xFF2563EB)
-                  : _corPrimaria),
-          borderRadius: BorderRadius.circular(_botaoPressionado ? 20 : 16),
-          boxShadow: [
-            BoxShadow(
-              color: _corPrimaria.withValues(
-                alpha: desabilitado ? 0.1 : (_botaoPressionado ? 0.2 : 0.35),
-              ),
-              blurRadius: _botaoPressionado ? 4 : 10,
-              offset: Offset(0, _botaoPressionado ? 2 : 6),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (_registrando)
-              const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white,
-                ),
-              )
-            else
-              AnimatedScale(
-                scale: _botaoPressionado ? 0.85 : 1.0,
-                duration: const Duration(milliseconds: 200),
-                child: Icon(
-                  Icons.water_drop,
-                  color: Colors.white.withValues(alpha: desabilitado ? 0.7 : 1),
-                  size: 22,
-                ),
-              ),
-            const SizedBox(width: 10),
-            Text(
-              'Já bebi água! ✓',
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.bold,
-                color: Colors.white.withValues(alpha: desabilitado ? 0.7 : 1),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHistoricoHoras() {
-    final horas = _horasVisiveis();
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-      ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            for (var i = 0; i < horas.length; i++) ...[
-              if (i > 0)
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8),
-                  child: Text(
-                    '·',
-                    style: TextStyle(
-                      color: _corTextoSecundario,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-              _buildTextoHora(horas[i]),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextoHora(int hora) {
-    final horario = '${hora.toString().padLeft(2, '0')}:00';
-    final concluido = _horariosConsumidos.contains(horario);
-    final ehProximo = !concluido && hora == DateTime.now().hour;
-    final simbolo = concluido ? '✓' : '○';
-
-    return Text(
-      '${_formatarHora(hora)} $simbolo',
-      style: TextStyle(
-        fontSize: 14,
-        color: concluido
-            ? _corPrimariaEscura
-            : (ehProximo ? _corPrimaria : _corTextoSecundario),
-        fontWeight: concluido || ehProximo ? FontWeight.w600 : FontWeight.normal,
-      ),
-    );
-  }
-
-  Widget _buildAreaConteudo() {
-    if (_consumosHoje.isEmpty) {
-      return Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFFE5E7EB).withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(16),
-        ),
-      );
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-      ),
-      child: ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: _consumosHoje.length,
-        separatorBuilder: (context, _) => const Divider(height: 16),
-        itemBuilder: (context, index) {
-          final item = _consumosHoje[index];
-          final horario = (item['horario'] as String).substring(0, 2);
-          final ml = item['quantidade_ml'] as int;
-
-          return Row(
-            children: [
-              const Icon(Icons.water_drop_outlined, color: _corPrimaria, size: 22),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  '${horario}h',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: _corPrimariaEscura,
-                  ),
-                ),
-              ),
-              Text(
-                '+${_formatarMl(ml)} ml',
-                style: const TextStyle(color: _corTextoSecundario),
-              ),
-            ],
-          );
-        },
       ),
     );
   }
 }
-

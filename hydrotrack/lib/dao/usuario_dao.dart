@@ -1,6 +1,5 @@
 import '../database/banco_dados.dart';
 import '../modelo/usuario.dart';
-import 'package:sqflite_common/sqflite.dart';
 
 Future<int> salvarUsuario(Usuario usuario) async {
   final db = await getDatabase();
