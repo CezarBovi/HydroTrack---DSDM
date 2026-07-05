@@ -7,6 +7,7 @@ import '../modelo/consumo.dart';
 import 'tela_historico.dart';
 import 'tela_lembretes.dart';
 import 'tela_configuracoes.dart';
+import '../utilitarios/servico_notificacao.dart';
 
 class TelaInicial extends StatefulWidget {
   const TelaInicial({super.key});

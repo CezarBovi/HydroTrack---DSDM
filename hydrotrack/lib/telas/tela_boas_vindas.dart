@@ -11,25 +11,42 @@ class TelaBoasVindas extends StatelessWidget {
         title: const Text('HydroTrack'),
         centerTitle: true,
         backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
       ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.water_drop, size: 100, color: Colors.blue),
-            const SizedBox(height: 24),
-            const Text(
-              'Bem-vindo!',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Vamos calcular sua hidratação ideal com base no seu peso e altura.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16, color: Colors.grey),
+            Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.water_drop,
+                size: 64,
+                color: Colors.blue,
+              ),
             ),
             const SizedBox(height: 32),
+            const Text(
+              'Bem-vindo ao\nHydroTrack! 💧',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Vamos calcular sua hidratação ideal\ncom base no seu peso e altura.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 15, color: Colors.grey.shade600),
+            ),
+            const SizedBox(height: 48),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -43,8 +60,16 @@ class TelaBoasVindas extends StatelessWidget {
                 },
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-                child: const Text('Começar'),
+                child: const Text(
+                  'Começar',
+                  style: TextStyle(fontSize: 16),
+                ),
               ),
             ),
           ],

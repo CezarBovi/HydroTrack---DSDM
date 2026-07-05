@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../dao/lembrete_dao.dart';
 import '../modelo/lembrete.dart';
+import '../utilitarios/servico_notificacao.dart';
 
 class TelaLembretes extends StatefulWidget {
   const TelaLembretes({super.key});
@@ -28,7 +29,8 @@ class _TelaLembretesState extends State<TelaLembretes> {
   }
 
   Future<void> _deletarLembrete(int id) async {
-    await deletarLembrete(id);
+    await cancelarLembrete(id); // cancela notificação
+    await deletarLembrete(id);  // deleta do banco
     await _carregarLembretes();
   }
 
@@ -339,13 +341,22 @@ class _FormularioLembreteState extends State<FormularioLembrete> {
       return;
     }
 
-    await inserirLembrete(Lembrete(
+    // Salva no banco
+    final id = await inserirLembrete(Lembrete(
       titulo: tituloController.text.trim(),
       horario: _formatarHorario(horarioSelecionado),
       intervaloHoras: intervaloSelecionado,
       diasSemana: _montarDiasSemana(),
       ativo: 1,
     ));
+
+    // Agenda notificação real no celular
+    await agendarLembrete(
+      id: id,
+      titulo: tituloController.text.trim(),
+      horario: _formatarHorario(horarioSelecionado),
+      intervaloHoras: intervaloSelecionado,
+    );
 
     widget.onSalvar();
     if (mounted) Navigator.pop(context);
