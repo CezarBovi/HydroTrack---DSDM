@@ -34,9 +34,23 @@ class _TelaLembretesState extends State<TelaLembretes> {
     await _carregarLembretes();
   }
 
-  Future<void> _alternarStatus(int id, int statusAtual) async {
+  Future<void> _alternarStatus(Map<String, dynamic> lembrete) async {
+    final id = lembrete['id'] as int;
+    final statusAtual = lembrete['ativo'] as int;
     final novoStatus = statusAtual == 1 ? 0 : 1;
     await atualizarStatusLembrete(id, novoStatus);
+
+    if (novoStatus == 1) {
+      await agendarLembrete(
+        id: id,
+        titulo: lembrete['titulo'],
+        horario: lembrete['horario'],
+        intervaloHoras: lembrete['intervalo_horas'],
+      );
+    } else {
+      await cancelarLembrete(id);
+    }
+
     await _carregarLembretes();
   }
 
@@ -215,8 +229,7 @@ class _TelaLembretesState extends State<TelaLembretes> {
                           const SizedBox(width: 8),
                           Switch(
                             value: ativo,
-                            onChanged: (_) =>
-                                _alternarStatus(l['id'], l['ativo']),
+                            onChanged: (_) => _alternarStatus(l),
                             activeColor: Colors.blue,
                           ),
                         ],

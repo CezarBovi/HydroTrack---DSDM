@@ -54,6 +54,9 @@ class _TelaInicialState extends State<TelaInicial> {
       quantidadeMl: 250,
     ));
 
+    // Reagenda a notificação de água para 1 hora a partir de agora
+    await reagendarAposConsumo();
+
     setState(() => botaoClicado = true);
     await _carregarDados();
 
