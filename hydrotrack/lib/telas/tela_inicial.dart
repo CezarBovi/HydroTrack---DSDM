@@ -85,6 +85,10 @@ class _TelaInicialState extends State<TelaInicial> {
   }
 
   Widget _construirHome() {
+    final corCard = Theme.of(context).colorScheme.surface;
+    final corOutline = Theme.of(context).colorScheme.outlineVariant;
+    final corTextoSecundario = Theme.of(context).colorScheme.onSurfaceVariant;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Column(
@@ -92,7 +96,7 @@ class _TelaInicialState extends State<TelaInicial> {
         children: [
           Text(
             _formatarData(),
-            style: const TextStyle(fontSize: 13, color: Colors.grey),
+            style: TextStyle(fontSize: 13, color: corTextoSecundario),
           ),
           const SizedBox(height: 20),
 
@@ -101,9 +105,16 @@ class _TelaInicialState extends State<TelaInicial> {
             width: double.infinity,
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.blue.shade50,
+              color: corCard,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.blue.shade100),
+              border: Border.all(color: corOutline),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x10000000),
+                  blurRadius: 12,
+                  offset: Offset(0, 4),
+                ),
+              ],
             ),
             child: Column(
               children: [
@@ -117,7 +128,7 @@ class _TelaInicialState extends State<TelaInicial> {
                 ),
                 Text(
                   'de ${usuario!.metaDiariaMl.toStringAsFixed(0)} ml — ${(_calcularProgresso() * 100).toStringAsFixed(0)}%',
-                  style: const TextStyle(fontSize: 14, color: Colors.grey),
+                  style: TextStyle(fontSize: 14, color: corTextoSecundario),
                 ),
                 const SizedBox(height: 16),
                 ClipRRect(
@@ -125,20 +136,74 @@ class _TelaInicialState extends State<TelaInicial> {
                   child: LinearProgressIndicator(
                     value: _calcularProgresso(),
                     minHeight: 12,
-                    backgroundColor: Colors.blue.shade100,
+                    backgroundColor: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.18),
                     valueColor: AlwaysStoppedAnimation<Color>(_corProgresso()),
                   ),
                 ),
-                if (_calcularProgresso() >= 1.0) ...[
-                  const SizedBox(height: 12),
-                  const Text(
-                    '🎉 Meta atingida! Parabéns!',
-                    style: TextStyle(
-                      color: Colors.green,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
+                Builder(
+                  builder: (context) {
+                    final p = _calcularProgresso();
+                    final meta = usuario!.metaDiariaMl;
+                    if (p < 0.65) return const SizedBox.shrink();
+
+                    final faltamMl = (meta - consumidoHoje)
+                        .clamp(0, meta)
+                        .round();
+                    final excedenteMl = (consumidoHoje - meta).round();
+
+                    String titulo;
+                    String detalhe;
+                    Color cor;
+
+                    if (p < 0.8) {
+                      titulo = 'Só mais um pouquinho!';
+                      detalhe = 'Faltam $faltamMl ml';
+                      cor = Colors.blue;
+                    } else if (p < 1.0) {
+                      titulo = 'Quase lá!';
+                      detalhe =
+                          'Faltam ${faltamMl.clamp(0, meta.round()).toString()} ml';
+                      cor = Colors.orange;
+                    } else if (p < 1.2) {
+                      titulo = 'Meta batida! Parabéns!';
+                      detalhe = 'Você já fez +$excedenteMl ml';
+                      cor = Colors.green;
+                    } else {
+                      titulo = 'Passou da meta! Mandou muito bem!';
+                      detalhe = 'Hoje você fez +$excedenteMl ml';
+                      cor = Colors.green.shade700;
+                    }
+
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            titulo,
+                            style: TextStyle(
+                              color: cor,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            detalhe,
+                            style: TextStyle(
+                              color: cor.withValues(alpha: 0.9),
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
               ],
             ),
           ),
@@ -158,8 +223,8 @@ class _TelaInicialState extends State<TelaInicial> {
                 boxShadow: [
                   BoxShadow(
                     color: botaoClicado
-                        ? Colors.green.withOpacity(0.5)
-                        : Colors.blue.withOpacity(0.3),
+                        ? Colors.green.withValues(alpha: 0.5)
+                        : Colors.blue.withValues(alpha: 0.3),
                     blurRadius: botaoClicado ? 24 : 10,
                     spreadRadius: botaoClicado ? 4 : 1,
                   ),
@@ -191,35 +256,68 @@ class _TelaInicialState extends State<TelaInicial> {
           ),
           const SizedBox(height: 32),
 
-          const Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              'Quantidade por registro',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: opcoesQuantidadeMl.map((ml) {
-              final selecionado = quantidadeSelecionadaMl == ml;
-              return ChoiceChip(
-                label: Text('$ml ml'),
-                selected: selecionado,
-                selectedColor: Colors.blue,
-                labelStyle: TextStyle(
-                  color: selecionado ? Colors.white : Colors.black,
-                  fontWeight: FontWeight.w500,
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: corCard,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: corOutline),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x08000000),
+                  blurRadius: 8,
+                  offset: Offset(0, 3),
                 ),
-                onSelected: (_) {
-                  setState(() {
-                    quantidadeSelecionadaMl = ml;
-                    botaoClicado = false;
-                  });
-                },
-              );
-            }).toList(),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const Text(
+                  'Quantidade por registro',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: opcoesQuantidadeMl.map((ml) {
+                    final selecionado = quantidadeSelecionadaMl == ml;
+                    return ChoiceChip(
+                      label: Text('$ml ml'),
+                      selected: selecionado,
+                      showCheckmark: false,
+                      selectedColor: Colors.blue,
+                      backgroundColor: Colors.blue.shade50,
+                      labelStyle: TextStyle(
+                        color: selecionado
+                            ? Colors.white
+                            : Colors.blue.shade900,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        side: BorderSide(
+                          color: selecionado
+                              ? Colors.blue
+                              : Colors.blue.shade100,
+                        ),
+                      ),
+                      onSelected: (_) {
+                        setState(() {
+                          quantidadeSelecionadaMl = ml;
+                          botaoClicado = false;
+                        });
+                      },
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 24),
 
@@ -235,15 +333,22 @@ class _TelaInicialState extends State<TelaInicial> {
             const SizedBox(height: 8),
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: corCard,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.blue.shade100),
+                border: Border.all(color: corOutline),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x10000000),
+                    blurRadius: 8,
+                    offset: Offset(0, 3),
+                  ),
+                ],
               ),
               child: ListView.separated(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: registrosDeHoje.length,
-                separatorBuilder: (_, __) =>
+                separatorBuilder: (_, _) =>
                     Divider(height: 1, color: Colors.blue.shade50),
                 itemBuilder: (context, index) {
                   final r = registrosDeHoje[index];
@@ -252,7 +357,7 @@ class _TelaInicialState extends State<TelaInicial> {
                     title: Text('${r['quantidade_ml']} ml'),
                     trailing: Text(
                       r['horario'],
-                      style: const TextStyle(color: Colors.grey),
+                      style: TextStyle(color: corTextoSecundario),
                     ),
                   );
                 },
@@ -263,9 +368,16 @@ class _TelaInicialState extends State<TelaInicial> {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.orange.shade50,
+                color: corCard,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.orange.shade100),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x0F000000),
+                    blurRadius: 8,
+                    offset: Offset(0, 3),
+                  ),
+                ],
               ),
               child: const Text(
                 '💡 Toque na garrafa sempre que beber água!',
@@ -312,12 +424,7 @@ class _TelaInicialState extends State<TelaInicial> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_tituloDaAba()),
-        centerTitle: true,
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-      ),
+      appBar: AppBar(title: Text(_tituloDaAba())),
       body: usuario == null
           ? const Center(child: CircularProgressIndicator())
           : _telaAtiva(),
@@ -325,9 +432,6 @@ class _TelaInicialState extends State<TelaInicial> {
       // BottomNavigationBar — Widget Novo #1
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _indiceAbaAtiva,
-        selectedItemColor: Colors.blue,
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
         onTap: (indice) {
           setState(() => _indiceAbaAtiva = indice);
           if (indice == 0) _carregarDados();

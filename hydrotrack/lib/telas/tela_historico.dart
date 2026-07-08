@@ -69,8 +69,10 @@ class _TelaHistoricoState extends State<TelaHistorico> {
   }
 
   // Monta as barras do fl_chart — Widget Novo #3
-  List<BarChartGroupData> _montarBarras() {
-    final maxY = _calcularMaxY();
+  List<BarChartGroupData> _montarBarras({
+    required double maxY,
+    required Color backDrawColor,
+  }) {
     return List.generate(historico.length, (index) {
       final total = (historico[index]['total'] as int).toDouble();
       final bateu = total >= metaDiaria;
@@ -89,7 +91,7 @@ class _TelaHistoricoState extends State<TelaHistorico> {
             backDrawRodData: BackgroundBarChartRodData(
               show: true,
               toY: maxY,
-              color: Colors.grey.shade100,
+              color: backDrawColor,
             ),
           ),
         ],
@@ -104,14 +106,23 @@ class _TelaHistoricoState extends State<TelaHistorico> {
     }
 
     if (historico.isEmpty) {
-      return const Center(
+      final corTextoSecundario = Theme.of(context).colorScheme.onSurfaceVariant;
+      return Center(
         child: Text(
           'Nenhum registro ainda.\nComece bebendo água! 💧',
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 16, color: Colors.grey),
+          style: TextStyle(fontSize: 16, color: corTextoSecundario),
         ),
       );
     }
+
+    final corTextoSecundario = Theme.of(context).colorScheme.onSurfaceVariant;
+    final corLinhaGrade = Theme.of(
+      context,
+    ).colorScheme.outlineVariant.withValues(alpha: 0.35);
+    final corFundoProgresso = Theme.of(
+      context,
+    ).colorScheme.outlineVariant.withValues(alpha: 0.35);
 
     final metasBatidas = historico
         .where((h) => (h['total'] as int) >= metaDiaria)
@@ -128,9 +139,18 @@ class _TelaHistoricoState extends State<TelaHistorico> {
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.blue.shade50,
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.blue.shade100),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x10000000),
+                  blurRadius: 10,
+                  offset: Offset(0, 4),
+                ),
+              ],
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -173,9 +193,9 @@ class _TelaHistoricoState extends State<TelaHistorico> {
                 ),
               ),
               const SizedBox(width: 4),
-              const Text(
+              Text(
                 'Meta batida',
-                style: TextStyle(fontSize: 11, color: Colors.grey),
+                style: TextStyle(fontSize: 11, color: corTextoSecundario),
               ),
               const SizedBox(width: 12),
               Container(
@@ -187,123 +207,144 @@ class _TelaHistoricoState extends State<TelaHistorico> {
                 ),
               ),
               const SizedBox(width: 4),
-              const Text(
+              Text(
                 'Abaixo da meta',
-                style: TextStyle(fontSize: 11, color: Colors.grey),
+                style: TextStyle(fontSize: 11, color: corTextoSecundario),
               ),
             ],
           ),
           const SizedBox(height: 16),
 
           // Gráfico de barras — fl_chart BarChart — Widget Novo #3
-          SizedBox(
-            height: 220,
-            child: BarChart(
-              BarChartData(
-                maxY: maxY,
-                barTouchData: BarTouchData(
-                  touchCallback: (event, response) {
-                    setState(() {
-                      if (response == null ||
-                          response.spot == null ||
-                          event is FlPointerExitEvent) {
-                        barraSelecionada = -1;
-                      } else {
-                        barraSelecionada = response.spot!.touchedBarGroupIndex;
-                      }
-                    });
-                  },
-                  touchTooltipData: BarTouchTooltipData(
-                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                      final data = historico[group.x];
-                      final total = data['total'] as int;
-                      final bateu = total >= metaDiaria;
-                      return BarTooltipItem(
-                        '${_diaDaSemana(data['data'])}\n$total ml\n${bateu ? '✓ Meta batida' : '✗ Abaixo da meta'}',
-                        TextStyle(
-                          color: bateu ? Colors.green : Colors.blue,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      );
-                    },
-                  ),
+          Container(
+            padding: const EdgeInsets.fromLTRB(12, 10, 8, 8),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x10000000),
+                  blurRadius: 10,
+                  offset: Offset(0, 4),
                 ),
-                titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 46,
-                      getTitlesWidget: (value, meta) {
-                        if (value == 0) return const Text('');
-                        return Text(
-                          '${(value / 1000).toStringAsFixed(1)}L',
-                          style: const TextStyle(
-                            fontSize: 10,
-                            color: Colors.grey,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, meta) {
-                        final index = value.toInt();
-                        if (index < 0 || index >= historico.length) {
-                          return const Text('');
+              ],
+            ),
+            child: SizedBox(
+              height: 220,
+              child: BarChart(
+                BarChartData(
+                  maxY: maxY,
+                  barTouchData: BarTouchData(
+                    touchCallback: (event, response) {
+                      setState(() {
+                        if (response == null ||
+                            response.spot == null ||
+                            event is FlPointerExitEvent) {
+                          barraSelecionada = -1;
+                        } else {
+                          barraSelecionada =
+                              response.spot!.touchedBarGroupIndex;
                         }
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 6),
-                          child: Text(
-                            _diaDaSemana(historico[index]['data']),
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey,
-                            ),
+                      });
+                    },
+                    touchTooltipData: BarTouchTooltipData(
+                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                        final data = historico[group.x];
+                        final total = data['total'] as int;
+                        final bateu = total >= metaDiaria;
+                        return BarTooltipItem(
+                          '${_diaDaSemana(data['data'])}\n$total ml\n${bateu ? '✓ Meta batida' : '✗ Abaixo da meta'}',
+                          TextStyle(
+                            color: bateu ? Colors.green : Colors.blue,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
                           ),
                         );
                       },
                     ),
                   ),
-                ),
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  horizontalInterval: metaDiaria / 4,
-                  getDrawingHorizontalLine: (value) =>
-                      FlLine(color: Colors.grey.shade200, strokeWidth: 1),
-                ),
-                borderData: FlBorderData(show: false),
-                barGroups: _montarBarras(),
-                // Linha horizontal da meta
-                extraLinesData: ExtraLinesData(
-                  horizontalLines: [
-                    HorizontalLine(
-                      y: metaDiaria,
-                      color: Colors.orange.shade300,
-                      strokeWidth: 1.5,
-                      dashArray: [6, 4],
-                      label: HorizontalLineLabel(
-                        show: true,
-                        alignment: Alignment.topRight,
-                        labelResolver: (_) =>
-                            'Meta: ${metaDiaria.toStringAsFixed(0)} ml',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Colors.orange.shade400,
-                          fontWeight: FontWeight.bold,
-                        ),
+                  titlesData: FlTitlesData(
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 46,
+                        getTitlesWidget: (value, meta) {
+                          if (value == 0) return const Text('');
+                          return Text(
+                            '${(value / 1000).toStringAsFixed(1)}L',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: corTextoSecundario,
+                            ),
+                          );
+                        },
                       ),
                     ),
-                  ],
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, meta) {
+                          final index = value.toInt();
+                          if (index < 0 || index >= historico.length) {
+                            return const Text('');
+                          }
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Text(
+                              _diaDaSemana(historico[index]['data']),
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: corTextoSecundario,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: false,
+                    horizontalInterval: metaDiaria / 4,
+                    getDrawingHorizontalLine: (value) =>
+                        FlLine(color: corLinhaGrade, strokeWidth: 1),
+                  ),
+                  borderData: FlBorderData(show: false),
+                  barGroups: _montarBarras(
+                    maxY: maxY,
+                    backDrawColor: corFundoProgresso,
+                  ),
+                  // Linha horizontal da meta
+                  extraLinesData: ExtraLinesData(
+                    horizontalLines: [
+                      HorizontalLine(
+                        y: metaDiaria,
+                        color: Colors.orange.shade300,
+                        strokeWidth: 1.5,
+                        dashArray: [6, 4],
+                        label: HorizontalLineLabel(
+                          show: true,
+                          alignment: Alignment.topRight,
+                          labelResolver: (_) =>
+                              'Meta: ${metaDiaria.toStringAsFixed(0)} ml',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.orange.shade400,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -328,14 +369,14 @@ class _TelaHistoricoState extends State<TelaHistorico> {
                     width: 36,
                     child: Text(
                       _diaDaSemana(h['data']),
-                      style: const TextStyle(fontSize: 11, color: Colors.grey),
+                      style: TextStyle(fontSize: 11, color: corTextoSecundario),
                     ),
                   ),
                   SizedBox(
                     width: 42,
                     child: Text(
                       _formatarData(h['data']),
-                      style: const TextStyle(fontSize: 11, color: Colors.grey),
+                      style: TextStyle(fontSize: 11, color: corTextoSecundario),
                     ),
                   ),
                   Expanded(
@@ -344,7 +385,7 @@ class _TelaHistoricoState extends State<TelaHistorico> {
                       child: LinearProgressIndicator(
                         value: progresso,
                         minHeight: 16,
-                        backgroundColor: Colors.grey.shade200,
+                        backgroundColor: corFundoProgresso,
                         valueColor: AlwaysStoppedAnimation<Color>(
                           bateu ? Colors.green : Colors.blue,
                         ),
@@ -356,7 +397,7 @@ class _TelaHistoricoState extends State<TelaHistorico> {
                     '$total ml',
                     style: TextStyle(
                       fontSize: 11,
-                      color: bateu ? Colors.green : Colors.grey,
+                      color: bateu ? Colors.green : corTextoSecundario,
                       fontWeight: bateu ? FontWeight.bold : FontWeight.normal,
                     ),
                   ),
@@ -392,7 +433,10 @@ class _TelaHistoricoState extends State<TelaHistorico> {
         Text(
           label,
           textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 11, color: Colors.grey),
+          style: TextStyle(
+            fontSize: 11,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
       ],
     );

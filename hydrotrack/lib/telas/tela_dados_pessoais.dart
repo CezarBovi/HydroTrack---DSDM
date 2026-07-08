@@ -44,12 +44,14 @@ class _TelaDadosPessoaisState extends State<TelaDadosPessoais> {
     final peso = double.parse(pesoController.text.replaceAll(',', '.'));
     final altura = double.parse(alturaController.text.replaceAll(',', '.'));
 
-    await salvarUsuario(Usuario(
-      peso: peso,
-      altura: altura,
-      imc: resultado!.imc,
-      metaDiariaMl: resultado!.metaDiariaMl,
-    ));
+    await salvarUsuario(
+      Usuario(
+        peso: peso,
+        altura: altura,
+        imc: resultado!.imc,
+        metaDiariaMl: resultado!.metaDiariaMl,
+      ),
+    );
 
     if (!mounted) return;
 
@@ -62,34 +64,32 @@ class _TelaDadosPessoaisState extends State<TelaDadosPessoais> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Seus dados'),
-        centerTitle: true,
-        backgroundColor: Colors.blue,
-      ),
+      appBar: AppBar(title: const Text('Seus dados')),
       body: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(20),
         child: ListView(
           children: [
-            const Text('Peso (kg)', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              'Peso (kg)',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 6),
             TextField(
               controller: pesoController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                hintText: 'Ex: 70',
-                border: OutlineInputBorder(),
-              ),
+              decoration: const InputDecoration(hintText: 'Ex: 70'),
             ),
             const SizedBox(height: 16),
 
-            const Text('Altura (cm)', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              'Altura (cm)',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 6),
             TextField(
               controller: alturaController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                hintText: 'Ex: 175',
-                border: OutlineInputBorder(),
-              ),
+              decoration: const InputDecoration(hintText: 'Ex: 175'),
             ),
             const SizedBox(height: 16),
 
@@ -103,16 +103,26 @@ class _TelaDadosPessoaisState extends State<TelaDadosPessoais> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.blue.shade200),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x10000000),
+                      blurRadius: 10,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'IMC calculado: ${resultado!.imc} — ${resultado!.classificacao}',
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue,
+                      ),
                     ),
                   ],
                 ),
@@ -121,16 +131,26 @@ class _TelaDadosPessoaisState extends State<TelaDadosPessoais> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.green.shade200),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x10000000),
+                      blurRadius: 10,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
                       'Meta diária',
-                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                      ),
                     ),
                     Text(
                       '${resultado!.metaDiariaMl.toStringAsFixed(0)} ml / dia',
@@ -144,11 +164,6 @@ class _TelaDadosPessoaisState extends State<TelaDadosPessoais> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: confirmar,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                  ),
                   child: const Text('Confirmar'),
                 ),
               ),

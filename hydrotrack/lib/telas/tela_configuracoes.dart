@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../dao/usuario_dao.dart';
 import '../modelo/usuario.dart';
 import '../utilitarios/calculadora_imc.dart';
+import '../utilitarios/tema_controller.dart';
 
 class TelaConfiguracoes extends StatefulWidget {
   const TelaConfiguracoes({super.key});
@@ -15,11 +16,17 @@ class _TelaConfiguracoesState extends State<TelaConfiguracoes> {
   final pesoController = TextEditingController();
   final alturaController = TextEditingController();
   bool editando = false;
+  late final VoidCallback _listenerTema;
 
   @override
   void initState() {
     super.initState();
     _carregarUsuario();
+
+    _listenerTema = () {
+      if (mounted) setState(() {});
+    };
+    TemaController.temaMode.addListener(_listenerTema);
   }
 
   Future<void> _carregarUsuario() async {
@@ -45,12 +52,14 @@ class _TelaConfiguracoesState extends State<TelaConfiguracoes> {
     }
 
     final resultado = calcularImcEMeta(peso, altura);
-    await salvarUsuario(Usuario(
-      peso: peso,
-      altura: altura,
-      imc: resultado.imc,
-      metaDiariaMl: resultado.metaDiariaMl,
-    ));
+    await salvarUsuario(
+      Usuario(
+        peso: peso,
+        altura: altura,
+        imc: resultado.imc,
+        metaDiariaMl: resultado.metaDiariaMl,
+      ),
+    );
 
     await _carregarUsuario();
     setState(() => editando = false);
@@ -63,10 +72,22 @@ class _TelaConfiguracoesState extends State<TelaConfiguracoes> {
   }
 
   @override
+  void dispose() {
+    TemaController.temaMode.removeListener(_listenerTema);
+    pesoController.dispose();
+    alturaController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     if (usuario == null) {
       return const Center(child: CircularProgressIndicator());
     }
+
+    final temaEscuro = TemaController.temaMode.value == ThemeMode.dark;
+    final corFundoCard = Theme.of(context).colorScheme.surface;
+    final corOutline = Theme.of(context).colorScheme.outlineVariant;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -78,13 +99,34 @@ class _TelaConfiguracoesState extends State<TelaConfiguracoes> {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
+
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Modo escuro'),
+            value: temaEscuro,
+            onChanged: (v) async {
+              await TemaController.setModo(
+                v ? ThemeMode.dark : ThemeMode.light,
+              );
+              if (mounted) setState(() {});
+            },
+          ),
+          const SizedBox(height: 8),
+
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.blue.shade50,
+              color: corFundoCard,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.blue.shade100),
+              border: Border.all(color: corOutline),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x10000000),
+                  blurRadius: 10,
+                  offset: Offset(0, 4),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -92,8 +134,10 @@ class _TelaConfiguracoesState extends State<TelaConfiguracoes> {
                 _linhaDado('Peso', '${usuario!.peso} kg'),
                 _linhaDado('Altura', '${usuario!.altura} cm'),
                 _linhaDado('IMC', '${usuario!.imc}'),
-                _linhaDado('Meta diária',
-                    '${usuario!.metaDiariaMl.toStringAsFixed(0)} ml'),
+                _linhaDado(
+                  'Meta diária',
+                  '${usuario!.metaDiariaMl.toStringAsFixed(0)} ml',
+                ),
               ],
             ),
           ),
@@ -108,28 +152,26 @@ class _TelaConfiguracoesState extends State<TelaConfiguracoes> {
               ),
             )
           else ...[
-            const Text('Peso (kg)',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              'Peso (kg)',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 6),
             TextField(
               controller: pesoController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'Ex: 70',
-              ),
+              decoration: const InputDecoration(hintText: 'Ex: 70'),
             ),
             const SizedBox(height: 12),
-            const Text('Altura (cm)',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              'Altura (cm)',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 6),
             TextField(
               controller: alturaController,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'Ex: 175',
-              ),
+              decoration: const InputDecoration(hintText: 'Ex: 175'),
             ),
             const SizedBox(height: 16),
             Row(
@@ -144,10 +186,6 @@ class _TelaConfiguracoesState extends State<TelaConfiguracoes> {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: _salvarAlteracoes,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                    ),
                     child: const Text('Salvar'),
                   ),
                 ),
@@ -165,12 +203,20 @@ class _TelaConfiguracoesState extends State<TelaConfiguracoes> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label,
-              style: const TextStyle(
-                  color: Colors.grey, fontWeight: FontWeight.w500)),
-          Text(valor,
-              style: const TextStyle(
-                  fontWeight: FontWeight.bold, color: Colors.blue)),
+          Text(
+            label,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          Text(
+            valor,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.blue,
+            ),
+          ),
         ],
       ),
     );
