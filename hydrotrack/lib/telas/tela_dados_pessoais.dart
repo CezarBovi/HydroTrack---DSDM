@@ -64,7 +64,10 @@ class _TelaDadosPessoaisState extends State<TelaDadosPessoais> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Seus dados')),
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: const Text('Seus dados'),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: ListView(

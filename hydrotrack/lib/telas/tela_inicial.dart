@@ -68,6 +68,12 @@ class _TelaInicialState extends State<TelaInicial> {
     if (mounted) setState(() => botaoClicado = false);
   }
 
+  Future<void> _deletarRegistro(int id) async {
+    await deletarConsumo(id);
+    await reagendarAposConsumo();
+    await _carregarDados();
+  }
+
   double _calcularProgresso() {
     if (usuario == null || usuario!.metaDiariaMl == 0) return 0;
     return (consumidoHoje / usuario!.metaDiariaMl).clamp(0.0, 1.0);
@@ -352,12 +358,57 @@ class _TelaInicialState extends State<TelaInicial> {
                     Divider(height: 1, color: Colors.blue.shade50),
                 itemBuilder: (context, index) {
                   final r = registrosDeHoje[index];
-                  return ListTile(
-                    leading: const Icon(Icons.water_drop, color: Colors.blue),
-                    title: Text('${r['quantidade_ml']} ml'),
-                    trailing: Text(
-                      r['horario'],
-                      style: TextStyle(color: corTextoSecundario),
+                  return Dismissible(
+                    key: Key('consumo_${r['id']}'),
+                    direction: DismissDirection.endToStart,
+                    background: Container(
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.only(right: 20),
+                      color: Colors.red,
+                      child: const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.delete, color: Colors.white),
+                          Text(
+                            'Apagar',
+                            style: TextStyle(color: Colors.white, fontSize: 11),
+                          ),
+                        ],
+                      ),
+                    ),
+                    confirmDismiss: (direction) async {
+                      return await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: const Text('Apagar registro'),
+                          content: Text(
+                            'Deseja apagar ${r['quantidade_ml']} ml?',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, false),
+                              child: const Text('Cancelar'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () => Navigator.pop(ctx, true),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                foregroundColor: Colors.white,
+                              ),
+                              child: const Text('Apagar'),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                    onDismissed: (_) => _deletarRegistro(r['id'] as int),
+                    child: ListTile(
+                      leading: const Icon(Icons.water_drop, color: Colors.blue),
+                      title: Text('${r['quantidade_ml']} ml'),
+                      trailing: Text(
+                        r['horario'],
+                        style: TextStyle(color: corTextoSecundario),
+                      ),
                     ),
                   );
                 },
@@ -399,8 +450,6 @@ class _TelaInicialState extends State<TelaInicial> {
         return const TelaHistorico();
       case 2:
         return const TelaLembretes();
-      case 3:
-        return const TelaConfiguracoes();
       default:
         return _construirHome();
     }
@@ -414,17 +463,33 @@ class _TelaInicialState extends State<TelaInicial> {
         return 'Histórico';
       case 2:
         return 'Lembretes';
-      case 3:
-        return 'Configurações';
       default:
         return 'HydroTrack';
     }
   }
 
+  Future<void> _abrirConfiguracoes() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const TelaConfiguracoes()),
+    );
+    _carregarDados();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_tituloDaAba())),
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: Text(_tituloDaAba()),
+        actions: [
+          IconButton(
+            onPressed: _abrirConfiguracoes,
+            icon: const Icon(Icons.settings),
+            tooltip: 'Configurações',
+          ),
+        ],
+      ),
       body: usuario == null
           ? const Center(child: CircularProgressIndicator())
           : _telaAtiva(),
@@ -446,7 +511,6 @@ class _TelaInicialState extends State<TelaInicial> {
             icon: Icon(Icons.notifications),
             label: 'Lembretes',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Config.'),
         ],
       ),
     );

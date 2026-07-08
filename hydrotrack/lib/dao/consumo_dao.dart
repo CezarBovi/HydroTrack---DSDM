@@ -42,3 +42,8 @@ Future<List<Map<String, dynamic>>> buscarUltimosDias(int dias) async {
     LIMIT ?
   ''', [dias]);
 }
+
+Future<int> deletarConsumo(int id) async {
+  final db = await getDatabase();
+  return db.delete('consumo_agua', where: 'id = ?', whereArgs: [id]);
+}

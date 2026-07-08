@@ -10,7 +10,7 @@ Future<Database> getDatabase() async {
 
   _database = await openDatabase(
     path,
-    version: 1,
+    version: 2,
     onCreate: (db, version) async {
       await db.execute('''
         CREATE TABLE usuario (
@@ -41,8 +41,28 @@ Future<Database> getDatabase() async {
           ativo INTEGER NOT NULL DEFAULT 1
         )
       ''');
+
+      await _criarTabelaHistoricoPeso(db);
+    },
+    onUpgrade: (db, oldVersion, newVersion) async {
+      if (oldVersion < 2) {
+        await _criarTabelaHistoricoPeso(db);
+      }
     },
   );
 
   return _database!;
+}
+
+Future<void> _criarTabelaHistoricoPeso(Database db) async {
+  await db.execute('''
+    CREATE TABLE IF NOT EXISTS historico_peso (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      peso REAL NOT NULL,
+      altura REAL NOT NULL,
+      imc REAL NOT NULL,
+      meta_diaria_ml REAL NOT NULL,
+      data_registro TEXT NOT NULL
+    )
+  ''');
 }

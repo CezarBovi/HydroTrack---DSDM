@@ -1,11 +1,25 @@
 import '../database/banco_dados.dart';
 import '../modelo/usuario.dart';
+import '../modelo/historico_peso.dart';
+import 'historico_peso_dao.dart';
+import 'package:intl/intl.dart';
 
 Future<int> salvarUsuario(Usuario usuario) async {
   final db = await getDatabase();
-  // Sempre mantemos apenas 1 registro de usuário (substitui se já existir)
   await db.delete('usuario');
-  return db.insert('usuario', usuario.toMap());
+  final id = await db.insert('usuario', usuario.toMap());
+
+  await registrarHistoricoPeso(
+    HistoricoPeso(
+      peso: usuario.peso,
+      altura: usuario.altura,
+      imc: usuario.imc,
+      metaDiariaMl: usuario.metaDiariaMl,
+      dataRegistro: DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()),
+    ),
+  );
+
+  return id;
 }
 
 Future<Usuario?> buscarUsuario() async {
