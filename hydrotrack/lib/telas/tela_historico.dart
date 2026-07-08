@@ -57,8 +57,20 @@ class _TelaHistoricoState extends State<TelaHistorico> {
     return (soma / historico.length).toStringAsFixed(0);
   }
 
+  double _calcularMaxY() {
+    final maiorTotal = historico
+        .map((h) => (h['total'] as int).toDouble())
+        .fold<double>(
+          0,
+          (anterior, atual) => atual > anterior ? atual : anterior,
+        );
+    final referencia = maiorTotal > metaDiaria ? maiorTotal : metaDiaria;
+    return referencia * 1.2;
+  }
+
   // Monta as barras do fl_chart — Widget Novo #3
   List<BarChartGroupData> _montarBarras() {
+    final maxY = _calcularMaxY();
     return List.generate(historico.length, (index) {
       final total = (historico[index]['total'] as int).toDouble();
       final bateu = total >= metaDiaria;
@@ -76,7 +88,7 @@ class _TelaHistoricoState extends State<TelaHistorico> {
                 : (selecionado ? Colors.blue : Colors.blue.shade300),
             backDrawRodData: BackgroundBarChartRodData(
               show: true,
-              toY: metaDiaria * 1.2,
+              toY: maxY,
               color: Colors.grey.shade100,
             ),
           ),
@@ -101,8 +113,10 @@ class _TelaHistoricoState extends State<TelaHistorico> {
       );
     }
 
-    final metasBatidas =
-        historico.where((h) => (h['total'] as int) >= metaDiaria).length;
+    final metasBatidas = historico
+        .where((h) => (h['total'] as int) >= metaDiaria)
+        .length;
+    final maxY = _calcularMaxY();
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -121,12 +135,21 @@ class _TelaHistoricoState extends State<TelaHistorico> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _cardResumo('$metasBatidas/${historico.length}',
-                    'Metas\nbatidas', Colors.green),
-                _cardResumo('${historico.length - metasBatidas}',
-                    'Não\nbatidas', Colors.red),
                 _cardResumo(
-                    '${_calcularMedia()} ml', 'Média\n/dia', Colors.blue),
+                  '$metasBatidas/${historico.length}',
+                  'Metas\nbatidas',
+                  Colors.green,
+                ),
+                _cardResumo(
+                  '${historico.length - metasBatidas}',
+                  'Não\nbatidas',
+                  Colors.red,
+                ),
+                _cardResumo(
+                  '${_calcularMedia()} ml',
+                  'Média\n/dia',
+                  Colors.blue,
+                ),
               ],
             ),
           ),
@@ -142,24 +165,32 @@ class _TelaHistoricoState extends State<TelaHistorico> {
           Row(
             children: [
               Container(
-                  width: 12,
-                  height: 12,
-                  decoration: BoxDecoration(
-                      color: Colors.green.shade400,
-                      borderRadius: BorderRadius.circular(3))),
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: Colors.green.shade400,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
               const SizedBox(width: 4),
-              const Text('Meta batida',
-                  style: TextStyle(fontSize: 11, color: Colors.grey)),
+              const Text(
+                'Meta batida',
+                style: TextStyle(fontSize: 11, color: Colors.grey),
+              ),
               const SizedBox(width: 12),
               Container(
-                  width: 12,
-                  height: 12,
-                  decoration: BoxDecoration(
-                      color: Colors.blue.shade300,
-                      borderRadius: BorderRadius.circular(3))),
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade300,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
               const SizedBox(width: 4),
-              const Text('Abaixo da meta',
-                  style: TextStyle(fontSize: 11, color: Colors.grey)),
+              const Text(
+                'Abaixo da meta',
+                style: TextStyle(fontSize: 11, color: Colors.grey),
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -169,7 +200,7 @@ class _TelaHistoricoState extends State<TelaHistorico> {
             height: 220,
             child: BarChart(
               BarChartData(
-                maxY: metaDiaria * 1.2,
+                maxY: maxY,
                 barTouchData: BarTouchData(
                   touchCallback: (event, response) {
                     setState(() {
@@ -178,8 +209,7 @@ class _TelaHistoricoState extends State<TelaHistorico> {
                           event is FlPointerExitEvent) {
                         barraSelecionada = -1;
                       } else {
-                        barraSelecionada =
-                            response.spot!.touchedBarGroupIndex;
+                        barraSelecionada = response.spot!.touchedBarGroupIndex;
                       }
                     });
                   },
@@ -209,15 +239,19 @@ class _TelaHistoricoState extends State<TelaHistorico> {
                         return Text(
                           '${(value / 1000).toStringAsFixed(1)}L',
                           style: const TextStyle(
-                              fontSize: 10, color: Colors.grey),
+                            fontSize: 10,
+                            color: Colors.grey,
+                          ),
                         );
                       },
                     ),
                   ),
                   rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                   topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
@@ -231,7 +265,9 @@ class _TelaHistoricoState extends State<TelaHistorico> {
                           child: Text(
                             _diaDaSemana(historico[index]['data']),
                             style: const TextStyle(
-                                fontSize: 11, color: Colors.grey),
+                              fontSize: 11,
+                              color: Colors.grey,
+                            ),
                           ),
                         );
                       },
@@ -242,10 +278,8 @@ class _TelaHistoricoState extends State<TelaHistorico> {
                   show: true,
                   drawVerticalLine: false,
                   horizontalInterval: metaDiaria / 4,
-                  getDrawingHorizontalLine: (value) => FlLine(
-                    color: Colors.grey.shade200,
-                    strokeWidth: 1,
-                  ),
+                  getDrawingHorizontalLine: (value) =>
+                      FlLine(color: Colors.grey.shade200, strokeWidth: 1),
                 ),
                 borderData: FlBorderData(show: false),
                 barGroups: _montarBarras(),
@@ -294,16 +328,14 @@ class _TelaHistoricoState extends State<TelaHistorico> {
                     width: 36,
                     child: Text(
                       _diaDaSemana(h['data']),
-                      style: const TextStyle(
-                          fontSize: 11, color: Colors.grey),
+                      style: const TextStyle(fontSize: 11, color: Colors.grey),
                     ),
                   ),
                   SizedBox(
                     width: 42,
                     child: Text(
                       _formatarData(h['data']),
-                      style: const TextStyle(
-                          fontSize: 11, color: Colors.grey),
+                      style: const TextStyle(fontSize: 11, color: Colors.grey),
                     ),
                   ),
                   Expanded(
@@ -325,15 +357,17 @@ class _TelaHistoricoState extends State<TelaHistorico> {
                     style: TextStyle(
                       fontSize: 11,
                       color: bateu ? Colors.green : Colors.grey,
-                      fontWeight:
-                          bateu ? FontWeight.bold : FontWeight.normal,
+                      fontWeight: bateu ? FontWeight.bold : FontWeight.normal,
                     ),
                   ),
                   if (bateu)
                     const Padding(
                       padding: EdgeInsets.only(left: 4),
-                      child: Icon(Icons.check_circle,
-                          color: Colors.green, size: 14),
+                      child: Icon(
+                        Icons.check_circle,
+                        color: Colors.green,
+                        size: 14,
+                      ),
                     ),
                 ],
               ),
@@ -347,12 +381,19 @@ class _TelaHistoricoState extends State<TelaHistorico> {
   Widget _cardResumo(String valor, String label, Color cor) {
     return Column(
       children: [
-        Text(valor,
-            style: TextStyle(
-                fontSize: 18, fontWeight: FontWeight.bold, color: cor)),
-        Text(label,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 11, color: Colors.grey)),
+        Text(
+          valor,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: cor,
+          ),
+        ),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 11, color: Colors.grey),
+        ),
       ],
     );
   }

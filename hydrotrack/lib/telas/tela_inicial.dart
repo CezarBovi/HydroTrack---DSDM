@@ -24,6 +24,8 @@ class _TelaInicialState extends State<TelaInicial> {
   int consumidoHoje = 0;
   bool botaoClicado = false;
   List<Map<String, dynamic>> registrosDeHoje = [];
+  int quantidadeSelecionadaMl = 250;
+  final List<int> opcoesQuantidadeMl = [200, 250, 300, 450, 500, 750, 1000];
 
   @override
   void initState() {
@@ -48,11 +50,13 @@ class _TelaInicialState extends State<TelaInicial> {
     final dataHoje = DateFormat('yyyy-MM-dd').format(DateTime.now());
     final horarioAtual = DateFormat('HH:00').format(DateTime.now());
 
-    await registrarConsumo(Consumo(
-      data: dataHoje,
-      horario: horarioAtual,
-      quantidadeMl: 250,
-    ));
+    await registrarConsumo(
+      Consumo(
+        data: dataHoje,
+        horario: horarioAtual,
+        quantidadeMl: quantidadeSelecionadaMl,
+      ),
+    );
 
     // Reagenda a notificação de água para 1 hora a partir de agora
     await reagendarAposConsumo();
@@ -171,7 +175,9 @@ class _TelaInicialState extends State<TelaInicial> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    botaoClicado ? 'Registrado!\n+250 ml' : 'Já bebi\nágua! 💧',
+                    botaoClicado
+                        ? 'Registrado!\n+$quantidadeSelecionadaMl ml'
+                        : 'Já bebi\nágua! 💧',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.white,
@@ -184,6 +190,38 @@ class _TelaInicialState extends State<TelaInicial> {
             ),
           ),
           const SizedBox(height: 32),
+
+          const Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'Quantidade por registro',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: opcoesQuantidadeMl.map((ml) {
+              final selecionado = quantidadeSelecionadaMl == ml;
+              return ChoiceChip(
+                label: Text('$ml ml'),
+                selected: selecionado,
+                selectedColor: Colors.blue,
+                labelStyle: TextStyle(
+                  color: selecionado ? Colors.white : Colors.black,
+                  fontWeight: FontWeight.w500,
+                ),
+                onSelected: (_) {
+                  setState(() {
+                    quantidadeSelecionadaMl = ml;
+                    botaoClicado = false;
+                  });
+                },
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 24),
 
           // Registros do dia
           if (registrosDeHoje.isNotEmpty) ...[
@@ -295,10 +333,7 @@ class _TelaInicialState extends State<TelaInicial> {
           if (indice == 0) _carregarDados();
         },
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.water_drop),
-            label: 'Home',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.water_drop), label: 'Home'),
           BottomNavigationBarItem(
             icon: Icon(Icons.bar_chart),
             label: 'Histórico',
@@ -307,10 +342,7 @@ class _TelaInicialState extends State<TelaInicial> {
             icon: Icon(Icons.notifications),
             label: 'Lembretes',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Config.',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Config.'),
         ],
       ),
     );

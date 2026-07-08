@@ -30,7 +30,7 @@ class _TelaLembretesState extends State<TelaLembretes> {
 
   Future<void> _deletarLembrete(int id) async {
     await cancelarLembrete(id); // cancela notificação
-    await deletarLembrete(id);  // deleta do banco
+    await deletarLembrete(id); // deleta do banco
     await _carregarLembretes();
   }
 
@@ -61,10 +61,8 @@ class _TelaLembretesState extends State<TelaLembretes> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => FormularioLembrete(
-        lembrete: lembrete,
-        onSalvar: _carregarLembretes,
-      ),
+      builder: (context) =>
+          FormularioLembrete(lembrete: lembrete, onSalvar: _carregarLembretes),
     );
   }
 
@@ -81,8 +79,11 @@ class _TelaLembretesState extends State<TelaLembretes> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.notifications_off_outlined,
-                      size: 64, color: Colors.blue.shade200),
+                  Icon(
+                    Icons.notifications_off_outlined,
+                    size: 64,
+                    color: Colors.blue.shade200,
+                  ),
                   const SizedBox(height: 16),
                   const Text(
                     'Nenhum lembrete ainda.',
@@ -119,9 +120,10 @@ class _TelaLembretesState extends State<TelaLembretes> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(Icons.delete, color: Colors.white),
-                        Text('Deletar',
-                            style: TextStyle(
-                                color: Colors.white, fontSize: 11)),
+                        Text(
+                          'Deletar',
+                          style: TextStyle(color: Colors.white, fontSize: 11),
+                        ),
                       ],
                     ),
                   ),
@@ -130,20 +132,18 @@ class _TelaLembretesState extends State<TelaLembretes> {
                       context: context,
                       builder: (ctx) => AlertDialog(
                         title: const Text('Deletar lembrete'),
-                        content: Text(
-                            'Deseja deletar "${l['titulo']}"?'),
+                        content: Text('Deseja deletar "${l['titulo']}"?'),
                         actions: [
                           TextButton(
-                            onPressed: () =>
-                                Navigator.pop(ctx, false),
+                            onPressed: () => Navigator.pop(ctx, false),
                             child: const Text('Cancelar'),
                           ),
                           ElevatedButton(
-                            onPressed: () =>
-                                Navigator.pop(ctx, true),
+                            onPressed: () => Navigator.pop(ctx, true),
                             style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.red,
-                                foregroundColor: Colors.white),
+                              backgroundColor: Colors.red,
+                              foregroundColor: Colors.white,
+                            ),
                             child: const Text('Deletar'),
                           ),
                         ],
@@ -171,7 +171,9 @@ class _TelaLembretesState extends State<TelaLembretes> {
                     ),
                     child: ListTile(
                       contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 4),
+                        horizontal: 16,
+                        vertical: 4,
+                      ),
                       leading: CircleAvatar(
                         backgroundColor: ativo
                             ? Colors.blue.shade50
@@ -193,9 +195,7 @@ class _TelaLembretesState extends State<TelaLembretes> {
                         '${l['horario']} · ${_descreverIntervalo(l['intervalo_horas'])}',
                         style: TextStyle(
                           fontSize: 12,
-                          color: ativo
-                              ? Colors.grey
-                              : Colors.grey.shade400,
+                          color: ativo ? Colors.grey : Colors.grey.shade400,
                         ),
                       ),
                       trailing: Row(
@@ -203,7 +203,9 @@ class _TelaLembretesState extends State<TelaLembretes> {
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 3),
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
                             decoration: BoxDecoration(
                               color: ativo
                                   ? Colors.green.shade50
@@ -219,9 +221,7 @@ class _TelaLembretesState extends State<TelaLembretes> {
                               ativo ? 'Ativo' : 'Pausado',
                               style: TextStyle(
                                 fontSize: 11,
-                                color: ativo
-                                    ? Colors.green
-                                    : Colors.orange,
+                                color: ativo ? Colors.green : Colors.orange,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -271,11 +271,7 @@ class FormularioLembrete extends StatefulWidget {
   final Map<String, dynamic>? lembrete;
   final VoidCallback onSalvar;
 
-  const FormularioLembrete({
-    super.key,
-    this.lembrete,
-    required this.onSalvar,
-  });
+  const FormularioLembrete({super.key, this.lembrete, required this.onSalvar});
 
   @override
   State<FormularioLembrete> createState() => _FormularioLembreteState();
@@ -294,7 +290,15 @@ class _FormularioLembreteState extends State<FormularioLembrete> {
     {'label': '12 em 12h', 'valor': 12},
   ];
 
-  final List<String> diasSemana = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+  final List<String> diasSemana = [
+    'Seg',
+    'Ter',
+    'Qua',
+    'Qui',
+    'Sex',
+    'Sáb',
+    'Dom',
+  ];
   List<bool> diasSelecionados = [true, true, true, true, true, false, false];
 
   @override
@@ -355,13 +359,15 @@ class _FormularioLembreteState extends State<FormularioLembrete> {
     }
 
     // Salva no banco
-    final id = await inserirLembrete(Lembrete(
-      titulo: tituloController.text.trim(),
-      horario: _formatarHorario(horarioSelecionado),
-      intervaloHoras: intervaloSelecionado,
-      diasSemana: _montarDiasSemana(),
-      ativo: 1,
-    ));
+    final id = await inserirLembrete(
+      Lembrete(
+        titulo: tituloController.text.trim(),
+        horario: _formatarHorario(horarioSelecionado),
+        intervaloHoras: intervaloSelecionado,
+        diasSemana: _montarDiasSemana(),
+        ativo: 1,
+      ),
+    );
 
     // Agenda notificação real no celular
     await agendarLembrete(
@@ -377,148 +383,168 @@ class _FormularioLembreteState extends State<FormularioLembrete> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Cabeçalho
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return SafeArea(
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 20,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Novo lembrete',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              // Cabeçalho
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Novo lembrete',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
               ),
-              IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.close),
+              const Divider(),
+              const SizedBox(height: 8),
+
+              // Título
+              const Text(
+                'Título',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 6),
+              TextField(
+                controller: tituloController,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  hintText: 'Ex: Tomar remédio',
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Horário com showTimePicker — Widget Novo #5
+              const Text(
+                'Horário',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 6),
+              GestureDetector(
+                onTap: _selecionarHorario,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade400),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        _formatarHorario(horarioSelecionado),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Icon(Icons.access_time, color: Colors.blue),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Intervalo de repetição
+              const Text(
+                'Repetir',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                children: intervalos.map((i) {
+                  final selecionado = intervaloSelecionado == i['valor'];
+                  return ChoiceChip(
+                    label: Text(i['label']),
+                    selected: selecionado,
+                    selectedColor: Colors.blue,
+                    labelStyle: TextStyle(
+                      color: selecionado ? Colors.white : Colors.black,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    onSelected: (_) =>
+                        setState(() => intervaloSelecionado = i['valor']),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 16),
+
+              // Dias da semana
+              const Text(
+                'Dias da semana',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 10,
+                runSpacing: 8,
+                children: List.generate(diasSemana.length, (index) {
+                  final selecionado = diasSelecionados[index];
+                  return GestureDetector(
+                    onTap: () => setState(
+                      () => diasSelecionados[index] = !diasSelecionados[index],
+                    ),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: selecionado ? Colors.blue : Colors.grey.shade200,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          diasSemana[index].substring(0, 1),
+                          style: TextStyle(
+                            color: selecionado ? Colors.white : Colors.grey,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+              const SizedBox(height: 24),
+
+              // Botão salvar
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _salvar,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text(
+                    'Salvar lembrete',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                ),
               ),
             ],
           ),
-          const Divider(),
-          const SizedBox(height: 8),
-
-          // Título
-          const Text('Título',
-              style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 6),
-          TextField(
-            controller: tituloController,
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-              hintText: 'Ex: Tomar remédio',
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Horário com showTimePicker — Widget Novo #5
-          const Text('Horário',
-              style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 6),
-          GestureDetector(
-            onTap: _selecionarHorario,
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade400),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    _formatarHorario(horarioSelecionado),
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  const Icon(Icons.access_time, color: Colors.blue),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Intervalo de repetição
-          const Text('Repetir',
-              style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            children: intervalos.map((i) {
-              final selecionado = intervaloSelecionado == i['valor'];
-              return ChoiceChip(
-                label: Text(i['label']),
-                selected: selecionado,
-                selectedColor: Colors.blue,
-                labelStyle: TextStyle(
-                  color: selecionado ? Colors.white : Colors.black,
-                  fontWeight: FontWeight.w500,
-                ),
-                onSelected: (_) =>
-                    setState(() => intervaloSelecionado = i['valor']),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 16),
-
-          // Dias da semana
-          const Text('Dias da semana',
-              style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: List.generate(diasSemana.length, (index) {
-              final selecionado = diasSelecionados[index];
-              return GestureDetector(
-                onTap: () => setState(
-                    () => diasSelecionados[index] = !diasSelecionados[index]),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: selecionado ? Colors.blue : Colors.grey.shade200,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Text(
-                      diasSemana[index].substring(0, 1),
-                      style: TextStyle(
-                        color: selecionado ? Colors.white : Colors.grey,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            }),
-          ),
-          const SizedBox(height: 24),
-
-          // Botão salvar
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _salvar,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Salvar lembrete',
-                  style: TextStyle(fontSize: 16)),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
