@@ -28,10 +28,17 @@ Future<void> inicializarNotificacoes() async {
   const AndroidInitializationSettings android =
       AndroidInitializationSettings('@mipmap/ic_launcher');
 
+  const WindowsInitializationSettings windows =
+      WindowsInitializationSettings(
+    appName: 'hydrotrack',
+    appUserModelId: 'com.example.hydrotrack',
+    guid: '41f4d924-f7b5-4b05-9e66-6b6f79ec0f12',
+  );
 
   const InitializationSettings settings =
       InitializationSettings(
         android: android,
+        windows: windows,
       );
 
 
